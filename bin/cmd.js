@@ -30,18 +30,39 @@ colors.green = function(s) {
 }
 
 if (!args.length) {
-  help()
-  process.exit(1)
-}
+  var buf = ''
+  process.stdin.setEncoding('utf8')
+  process.stdin.on('data', function(d) {
+    buf += d
+  })
+  process.stdin.on('end', function() {
+    try {
+      var data = JSON.parse(buf)
+      print(data)
+    }
+    catch (err) {
+      console.error(colors.red('ERROR:'), err.message)
+      process.exit(1)
+    }
+  }).resume()
+} else {
+  var first = args.shift()
 
-try {
-  var res = require(path.resolve(args[0]))
-  print(res)
-}
-
-catch (err) {
-  console.error(colors.red('ERROR:'), err.message)
-  process.exit(1)
+  if (first) {
+    first = first.toLowerCase()
+    if (first === 'help' || first === '-h' || first === '--help') {
+      help()
+      process.exit()
+    }
+  }
+  try {
+    var data = require(path.resolve(args[0]))
+    print(data)
+  }
+  catch (err) {
+    console.error(colors.red('ERROR:'), err.message)
+    process.exit(1)
+  }
 }
 
 function print(results) {
