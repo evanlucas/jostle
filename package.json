@@ -1,6 +1,6 @@
 {
   "name": "jostle",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Pretty print jscoverage results",
   "main": "./bin/cmd.js",
   "bin": "./bin/cmd.js",
