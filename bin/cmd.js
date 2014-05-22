@@ -14,7 +14,7 @@ colors.red = function(s) {
 }
 
 colors.grey = function(s) {
-  return util.format('[\033[90m%s\033[0m', s)
+  return util.format('\033[90m%s\033[0m', s)
 }
 
 colors.yellow = function(s) {
