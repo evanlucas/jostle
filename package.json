@@ -22,5 +22,8 @@
   "bugs": {
     "url": "https://github.com/evanlucas/jostle/issues"
   },
-  "homepage": "https://github.com/evanlucas/jostle"
+  "homepage": "https://github.com/evanlucas/jostle",
+  "dependencies": {
+    "nopt": "~3.0.0"
+  }
 }
