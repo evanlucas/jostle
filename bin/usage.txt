@@ -1,0 +1,20 @@
+jostle
+
+  usage: jostle [options] <filename>
+
+  options:
+    -h, --help                        show help and usage
+    -v, --version                     show version
+    -t, --threshold <threshold>       set threshold
+
+  notes: if coverage is less than the threshold, the process will exit with 1
+
+  example:
+
+    passing the file with a threshold
+
+      jostle -t 70 coverage.json
+
+    piping a file with a threshold
+
+      cat coverage.json | jostle -t 70
