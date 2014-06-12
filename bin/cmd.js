@@ -1,7 +1,18 @@
 #!/usr/bin/env node
 
 var util = require('util')
-  , args = process.argv.splice(2)
+  , nopt = require('nopt')
+  , fs = require('fs')
+  , path = require('path')
+  , ko = { threshold: Number
+         , help: Boolean
+         , version: Boolean
+         }
+  , sh = { t: ['--threshold']
+         , h: ['--help']
+         , v: ['--version']
+         }
+  , parsed = nopt(ko, sh)
   , path = require('path')
   , colors = {}
 
@@ -29,6 +40,18 @@ colors.green = function(s) {
   return util.format('\033[92m%s\033[0m', s)
 }
 
+if (parsed.help) {
+  usage(0)
+  return
+}
+
+if (parsed.version) {
+  console.log('jostle', 'v'+require('../package').version)
+  return
+}
+
+var args = parsed.argv.remain
+
 if (!args.length) {
   var buf = ''
   process.stdin.setEncoding('utf8')
@@ -38,7 +61,8 @@ if (!args.length) {
   process.stdin.on('end', function() {
     try {
       var data = JSON.parse(buf)
-      print(data)
+      var res = print(data)
+      process.exit(res)
     }
     catch (err) {
       console.error(colors.red('ERROR:'), err.message)
@@ -46,18 +70,10 @@ if (!args.length) {
     }
   }).resume()
 } else {
-  var first = args.shift()
-
-  if (first) {
-    first = first.toLowerCase()
-    if (first === 'help' || first === '-h' || first === '--help') {
-      help()
-      process.exit()
-    }
-  }
   try {
     var data = require(path.resolve(args[0]))
-    print(data)
+    var res = print(data)
+    process.exit(res)
   }
   catch (err) {
     console.error(colors.red('ERROR:'), err.message)
@@ -71,21 +87,39 @@ function print(results) {
     , coverage = results.coverage
     , files = results.files
 
+  var fail = parsed.threshold
+    ? (+parsed.threshold > +coverage ? true : false)
+    : false
   console.log()
   console.log('Code Coverage:')
   console.log()
+  if (parsed.threshold) {
+    console.log('Required Coverage:', colors.green(+(parsed.threshold).toFixed(2)+'%'))
+    console.log()
+  }
   console.log(colors.magenta('  Overall'))
-  console.log('    COVERAGE:', formatCoverage(coverage))
-  console.log('    SLOC:    ', colors.cyan(sloc))
-  console.log('    HITS:    ', colors.cyan(hits))
+  if (parsed.threshold) {
+    console.log('    COVERAGE: ', formatCoverage(coverage, fail))
+  } else {
+    console.log('    COVERAGE: ', formatCoverage(coverage))
+  }
+  console.log('    SLOC:     ', colors.cyan(sloc))
+  console.log('    HITS:     ', colors.cyan(hits))
 
   files.forEach(function(file) {
     getFile(file)
   })
+
+  if (parsed.threshold) {
+    if (+parsed.threshold > +coverage) return 1
+  }
+
+  return 0
 }
 
-function formatCoverage(cov) {
+function formatCoverage(cov, fail) {
   var c = +(cov).toFixed(2)+'%'
+  if (fail) return colors.red(c+' (DOES NOT MEET THRESHOLD)')
   if (cov < 25) return colors.red(c)
   else if (cov < 50) return colors.yellow(c)
   else if (cov < 75) return colors.grey(c)
@@ -95,14 +129,15 @@ function formatCoverage(cov) {
 function getFile(file) {
   console.log()
   console.log(colors.magenta('  '+file.filename))
-  console.log('    COVERAGE:', formatCoverage(file.coverage))
-  console.log('    SLOC:    ', colors.cyan(file.sloc))
-  console.log('    HITS:    ', colors.cyan(file.hits))
+  console.log('    COVERAGE: ', formatCoverage(file.coverage))
+  console.log('    SLOC:     ', colors.cyan(file.sloc))
+  console.log('    HITS:     ', colors.cyan(file.hits))
 }
 
-function help() {
-  console.log('jostle v'+require('../package').version)
-  console.log()
-  console.log('  Usage: jostle <filename>')
-  console.log()
+function usage(code) {
+  var rs = fs.createReadStream(__dirname + '/usage.txt')
+  rs.pipe(process.stdout)
+  rs.on('close', function() {
+    if (code) process.exit(code)
+  })
 }
